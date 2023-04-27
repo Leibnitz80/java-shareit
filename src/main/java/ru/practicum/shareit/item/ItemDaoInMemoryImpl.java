@@ -13,12 +13,18 @@ import java.util.*;
 public class ItemDaoInMemoryImpl implements ItemDao {
     private long idGenerator;
     private final Map<Long, Item> items = new HashMap<>();
+    private final Map<Long, List<Item>> userItems = new HashMap<>();
 
     @Override
     public Item create(Item item) {
         Long id = getNextId();
         item.setId(id);
         items.put(id, item);
+        if (userItems.containsKey(item.getOwner().getId()))
+            userItems.get(item.getOwner().getId()).add(item);
+        else
+            userItems.put(item.getOwner().getId(), new ArrayList<>(List.of(item)));
+
         log.info("new item added: {}", item.getName());
         return item;
     }
@@ -29,7 +35,7 @@ public class ItemDaoInMemoryImpl implements ItemDao {
 
         Item updatedItem = items.get(item.getId());
 
-        if (!updatedItem.getOwner().equals(item.getOwner())) {
+        if (!updatedItem.getOwner().getId().equals(item.getOwner().getId())) {
             throw new WrongUserException("wrong user:" + item.getOwner() + " is not an owner of " + item);
         }
 
@@ -56,15 +62,7 @@ public class ItemDaoInMemoryImpl implements ItemDao {
 
     @Override
     public List<Item> getAllByUserId(Long userId) {
-        List<Item> result = new ArrayList<>();
-
-        for (Item item : items.values()) {
-            if (item.getOwner().equals(userId)) {
-                result.add(item);
-            }
-        }
-
-        return result;
+        return userItems.get(userId);
     }
 
     @Override

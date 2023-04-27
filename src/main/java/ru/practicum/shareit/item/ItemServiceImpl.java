@@ -3,7 +3,9 @@ package ru.practicum.shareit.item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserDao;
 
 import java.util.ArrayList;
@@ -17,14 +19,19 @@ public class ItemServiceImpl implements ItemService {
     private final UserDao userStorage;
 
     @Override
-    public Item create(Item item) {
-        userStorage.findById(item.getOwner());
-        return itemStorage.create(item);
+    public ItemDto create(ItemDto itemDto, Long userId) {
+        User user = userStorage.findById(userId);
+        Item item = ItemMapper.toItemModel(itemDto,user);
+
+        return ItemMapper.toItemDto(itemStorage.create(item));
     }
 
     @Override
-    public Item update(Item item) {
-        return itemStorage.update(item);
+    public ItemDto update(ItemDto itemDto,Long itemId, Long userId) {
+        User user = userStorage.findById(userId);
+        Item item = ItemMapper.toItemModel(itemDto,user);
+        item.setId(itemId);
+        return ItemMapper.toItemDto(itemStorage.update(item));
     }
 
     @Override
