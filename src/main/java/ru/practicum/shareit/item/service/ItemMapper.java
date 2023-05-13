@@ -1,17 +1,23 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.service;
 
+import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ItemMapper {
     public static ItemDto toItemDto(Item item) {
-        return new ItemDto(item.getId(), item.getName(), item.getDescription(), item.getAvailable());
+        ItemDto result = new ItemDto();
+        result.setId(item.getId());
+        result.setName(item.getName());
+        result.setDescription(item.getDescription());
+        result.setAvailable(item.getAvailable());
+        return result;
     }
 
     public static Item toItemModel(ItemDto itemDto, User owner) {
