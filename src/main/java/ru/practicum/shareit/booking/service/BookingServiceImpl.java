@@ -28,15 +28,15 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final ItemRepository itemRepository;
 
-    private final Sort sort = Sort.by(Sort.Direction.DESC, "start");
+    private static final Sort SORT = Sort.by(Sort.Direction.DESC, "start");
 
     @Transactional
     @Override
     public BookingDto create(BookingBriefDto bookingBriefDto, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
-        Item item = itemRepository.findById(bookingBriefDto.getItemId())
-                .orElseThrow(() -> new ObjectNotFoundException("item with id:" + bookingBriefDto.getItemId() + " not found error"));
+        checkUserExists(userId);
+        checkItemExists(bookingBriefDto.getItemId());
+        User user = userRepository.findById(userId).orElseThrow();
+        Item item = itemRepository.findById(bookingBriefDto.getItemId()).orElseThrow();
 
         if (item.getOwner().getId().equals(userId)) {
             throw new ObjectNotFoundException("user:" + userId + " can't book it's own item");
@@ -60,8 +60,8 @@ public class BookingServiceImpl implements BookingService {
     @Transactional
     @Override
     public BookingDto approve(Long bookingId, Long userId, Boolean approved) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ObjectNotFoundException("Booking with id:" + bookingId + " not found"));
+        checkBookingExists(bookingId);
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow();
         if (!userId.equals(booking.getItem().getOwner().getId())) {
             throw new ObjectNotFoundException("user id:" + userId + " is not an owner of item:" + booking.getItem().getId());
         }
@@ -81,34 +81,34 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     @Override
     public List<BookingDto> getAllByOwner(Long userId, BookingState state) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
+        checkUserExists(userId);
+        User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingsList = new ArrayList<>();
         switch (state) {
             case ALL:
-                bookingsList.addAll(bookingRepository.findAllByItemOwner(user, sort));
+                bookingsList.addAll(bookingRepository.findAllByItemOwner(user, SORT));
                 break;
 
             case FUTURE:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartAfter(user, LocalDateTime.now(), sort));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartAfter(user, LocalDateTime.now(), SORT));
                 break;
 
             case CURRENT:
                 bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartBeforeAndEndAfter(user,
-                        LocalDateTime.now(), LocalDateTime.now(), sort));
+                        LocalDateTime.now(), LocalDateTime.now(), SORT));
                 break;
 
             case PAST:
                 bookingsList.addAll(bookingRepository.findAllByItemOwnerAndEndBefore(user,
-                        LocalDateTime.now(), sort));
+                        LocalDateTime.now(), SORT));
                 break;
 
             case WAITING:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.WAITING, sort));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.WAITING, SORT));
                 break;
 
             case REJECTED:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.REJECTED, sort));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.REJECTED, SORT));
                 break;
 
             default:
@@ -121,35 +121,34 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     @Override
     public List<BookingDto> getAllByUser(Long userId, BookingState state) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ObjectNotFoundException("Невозможно найти бронирования - " +
-                        "не найден пользователь с id " + userId));
+        checkUserExists(userId);
+        User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingDtoList = new ArrayList<>();
         switch (state) {
             case ALL:
-                bookingDtoList.addAll(bookingRepository.findAllByBooker(user, sort));
+                bookingDtoList.addAll(bookingRepository.findAllByBooker(user, SORT));
                 break;
 
             case REJECTED:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.REJECTED, sort));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.REJECTED, SORT));
                 break;
 
             case CURRENT:
                 bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartBeforeAndEndAfter(user,
-                        LocalDateTime.now(), LocalDateTime.now(), sort));
+                        LocalDateTime.now(), LocalDateTime.now(), SORT));
                 break;
 
             case PAST:
                 bookingDtoList.addAll(bookingRepository.findAllByBookerAndEndBefore(user,
-                        LocalDateTime.now(), sort));
+                        LocalDateTime.now(), SORT));
                 break;
 
             case WAITING:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.WAITING, sort));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.WAITING, SORT));
                 break;
 
             case FUTURE:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartAfter(user, LocalDateTime.now(), sort));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartAfter(user, LocalDateTime.now(), SORT));
                 break;
 
             default:
@@ -162,12 +161,30 @@ public class BookingServiceImpl implements BookingService {
     @Transactional(readOnly = true)
     @Override
     public BookingDto getById(Long bookingId, Long userId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ObjectNotFoundException("No booking with id:" + bookingId));
+        checkBookingExists(bookingId);
+        Booking booking = bookingRepository.findById(bookingId).orElseThrow();
         if (!userId.equals(booking.getBooker().getId()) && !userId.equals(booking.getItem().getOwner().getId())) {
             throw new ObjectNotFoundException("access denied");
         }
 
         return BookingMapper.toBookingDto(booking);
+    }
+
+    private void checkUserExists(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new ObjectNotFoundException("User with id = " + userId + " not found error");
+        }
+    }
+
+    private void checkItemExists(Long itemId) {
+        if (!itemRepository.existsById(itemId)) {
+            throw new ObjectNotFoundException("Item with id = " + itemId + " not found error");
+        }
+    }
+
+    private void checkBookingExists(Long bookingId) {
+        if (!bookingRepository.existsById(bookingId)) {
+            throw new ObjectNotFoundException("Booking with id = " + bookingId + " not found error");
+        }
     }
 }

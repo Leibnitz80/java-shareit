@@ -40,12 +40,10 @@ public class UserServiceImpl implements UserService {
         return previousUser;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public User findById(long userId) {
-        User user = userRepository.findById(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
-        return user;
     }
 
     @Transactional
@@ -54,7 +52,6 @@ public class UserServiceImpl implements UserService {
         userRepository.deleteById(userId);
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<User> getAll() {
         return userRepository.findAll();

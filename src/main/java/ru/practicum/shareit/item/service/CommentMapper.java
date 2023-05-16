@@ -1,8 +1,10 @@
 package ru.practicum.shareit.item.service;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.model.Comment;
 
+@UtilityClass
 public class CommentMapper {
     public static Comment toCommentModel(CommentDto commentDto) {
         Comment result = new Comment();

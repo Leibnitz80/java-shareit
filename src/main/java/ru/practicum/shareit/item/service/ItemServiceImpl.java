@@ -37,7 +37,6 @@ public class ItemServiceImpl implements ItemService {
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
 
-    @Transactional
     public ItemDto create(ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
@@ -87,17 +86,15 @@ public class ItemServiceImpl implements ItemService {
 
         List<Booking> lastBooking = bookingRepository.findTop1BookingByItemIdAndEndIsBeforeAndStatusIs(
                 itemId, LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.DESC, "end"));
-
-        itemDto.setLastBooking(lastBooking.isEmpty() ? null : BookingMapper.toBookingBriefDto(lastBooking.get(0)));
-
         List<Booking> nextBooking = bookingRepository.findTop1BookingByItemIdAndEndIsAfterAndStatusIs(
                 itemId, LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.ASC, "end"));
 
-        itemDto.setNextBooking(nextBooking.isEmpty() ? null : BookingMapper.toBookingBriefDto(nextBooking.get(0)));
-
-        if (itemDto.getLastBooking() == null && itemDto.getNextBooking() != null) {
-            itemDto.setLastBooking(itemDto.getNextBooking());
+        if (lastBooking.isEmpty() && !nextBooking.isEmpty()) {
+            itemDto.setLastBooking(BookingMapper.toBookingBriefDto(nextBooking.get(0)));
             itemDto.setNextBooking(null);
+        } else if (!lastBooking.isEmpty() && !nextBooking.isEmpty()){
+            itemDto.setLastBooking(BookingMapper.toBookingBriefDto(lastBooking.get(0)));
+            itemDto.setNextBooking(BookingMapper.toBookingBriefDto(nextBooking.get(0)));
         }
 
         return itemDto;
@@ -144,7 +141,6 @@ public class ItemServiceImpl implements ItemService {
         return itemDtoList;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<Item> findByRequest(String request) {
         if (request == null || request.isBlank()) {
@@ -152,8 +148,8 @@ public class ItemServiceImpl implements ItemService {
         }
 
         List<Item> result = new ArrayList<>();
-        request = request.toLowerCase();
-
+        final String finalRequest = request.toLowerCase();
+/*
         for (Item item : itemRepository.findAll()) {
             String name = item.getName().toLowerCase();
             String description = item.getDescription().toLowerCase();
@@ -162,11 +158,14 @@ public class ItemServiceImpl implements ItemService {
                 result.add(item);
             }
         }
-
-        return result;
+*/
+          return itemRepository.findAll().stream()
+                  .filter(x -> x.getAvailable().equals(true))
+                  .filter(x -> x.getName().toLowerCase().contains(finalRequest) || x.getDescription().toLowerCase().contains(finalRequest))
+                  .collect(Collectors.toList());
+//        return result;
     }
 
-    @Transactional
     @Override
     public CommentDto createComment(Long itemId, Long userId, CommentDto commentDto) {
         User user = userRepository.findById(userId)
