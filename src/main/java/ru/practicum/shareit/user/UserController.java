@@ -28,7 +28,7 @@ public class UserController {
 
     @GetMapping("/{userId}")
     public UserDto findById(@NotNull @PathVariable Long userId) {
-        log.info("UserController: GET findById, userId = " + userId);
+        log.info("UserController: GET findById, userId = {}", userId);
         return UserMapper.toUserDto(userService.findById(userId));
     }
 
@@ -40,13 +40,13 @@ public class UserController {
     @PatchMapping("/{userId}")
     public UserDto update(@NotNull @PathVariable Long userId,
                           @RequestBody UserDto userDto) {
-        log.info("UserController: PATCH update, userId = " + userId);
+        log.info("UserController: PATCH update, userId = {}", userId);
         return UserMapper.toUserDto(userService.update(userId, userDto));
     }
 
     @DeleteMapping("/{userId}")
     public void delete(@NotNull @PathVariable Long userId) {
-        log.info("UserController: DELETE delete, userId = " + userId);
+        log.info("UserController: DELETE delete, userId = {}", userId);
         userService.delete(userId);
     }
 }

@@ -36,6 +36,7 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private static final Comparator<ItemDto> ITEM_DTO_SORT = Comparator.comparing(o -> o.getLastBooking().getStart(), Comparator.nullsLast(Comparator.reverseOrder()));
 
     public ItemDto create(ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
@@ -127,7 +128,7 @@ public class ItemServiceImpl implements ItemService {
             itemDto.setNextBooking(nextBooking.isEmpty() ? new BookingBriefDto() : BookingMapper.toBookingBriefDto(nextBooking.get(0)));
         }
 
-        itemDtoList.sort(Comparator.comparing(o -> o.getLastBooking().getStart(), Comparator.nullsLast(Comparator.reverseOrder())));
+        itemDtoList.sort(ITEM_DTO_SORT);
 
         for (ItemDto itemDto : itemDtoList) {
             if (itemDto.getLastBooking().getBookerId() == null) {
@@ -149,21 +150,11 @@ public class ItemServiceImpl implements ItemService {
 
         List<Item> result = new ArrayList<>();
         final String finalRequest = request.toLowerCase();
-/*
-        for (Item item : itemRepository.findAll()) {
-            String name = item.getName().toLowerCase();
-            String description = item.getDescription().toLowerCase();
 
-            if (item.getAvailable().equals(true) && (name.contains(request) || description.contains(request))) {
-                result.add(item);
-            }
-        }
-*/
           return itemRepository.findAll().stream()
                   .filter(x -> x.getAvailable().equals(true))
                   .filter(x -> x.getName().toLowerCase().contains(finalRequest) || x.getDescription().toLowerCase().contains(finalRequest))
                   .collect(Collectors.toList());
-//        return result;
     }
 
     @Override

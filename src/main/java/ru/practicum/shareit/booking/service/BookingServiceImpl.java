@@ -78,9 +78,14 @@ public class BookingServiceImpl implements BookingService {
         return BookingMapper.toBookingDto(booking);
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public List<BookingDto> getAllByOwner(Long userId, BookingState state) {
+    public List<BookingDto> getAllByOwner(Long userId, String strState) {
+        BookingState state;
+        try {
+            state = BookingState.valueOf(strState);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Unknown state: UNSUPPORTED_STATUS");
+        }
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingsList = new ArrayList<>();
@@ -118,9 +123,14 @@ public class BookingServiceImpl implements BookingService {
         return bookingsList.stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     @Override
-    public List<BookingDto> getAllByUser(Long userId, BookingState state) {
+    public List<BookingDto> getAllByUser(Long userId, String strState) {
+        BookingState state;
+        try {
+            state = BookingState.valueOf(strState);
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Unknown state: UNSUPPORTED_STATUS");
+        }
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingDtoList = new ArrayList<>();
@@ -158,7 +168,6 @@ public class BookingServiceImpl implements BookingService {
         return bookingDtoList.stream().map(BookingMapper::toBookingDto).collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     @Override
     public BookingDto getById(Long bookingId, Long userId) {
         checkBookingExists(bookingId);
