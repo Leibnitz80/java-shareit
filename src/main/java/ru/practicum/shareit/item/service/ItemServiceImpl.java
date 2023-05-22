@@ -23,10 +23,12 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static org.springframework.data.domain.Sort.Direction.DESC;
 
 @Slf4j
 @Service
@@ -79,14 +81,14 @@ public class ItemServiceImpl implements ItemService {
         ItemDto itemDto = ItemMapper.toItemDto(item);
 
         itemDto.setComments(commentRepository.findAllByItemId(itemId)
-                .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+                .stream().map(CommentMapper::toCommentDto).collect(toList()));
 
         if (!item.getOwner().getId().equals(userId)) {
             return itemDto;
         }
 
         List<Booking> lastBooking = bookingRepository.findTop1BookingByItemIdAndEndIsBeforeAndStatusIs(
-                itemId, LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.DESC, "end"));
+                itemId, LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(DESC, "end"));
         List<Booking> nextBooking = bookingRepository.findTop1BookingByItemIdAndEndIsAfterAndStatusIs(
                 itemId, LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.ASC, "end"));
 
@@ -104,32 +106,61 @@ public class ItemServiceImpl implements ItemService {
     @Transactional(readOnly = true)
     @Override
     public List<ItemDto> getAllByUserId(Long userId) {
-        List<Item> items = itemRepository.findAllByOwnerId(userId);
+        Set<Item> items = new HashSet<>(itemRepository.findAllByOwnerId(userId));
         if (items.isEmpty()) {
             return new ArrayList<>();
         }
+        Booking lastBooking = null;
+        Booking nextBooking = null;
+        LocalDateTime now = LocalDateTime.now();
 
-        List<ItemDto> itemDtoList = items.stream()
-                .map(ItemMapper::toItemDto)
-                .collect(Collectors.toList());
+        List<ItemDto> itemDtoList = new ArrayList<>();
+        Map<Item, List<Comment>> comments = commentRepository.findByItemIn(items, Sort.by(DESC, "created"))
+                .stream()
+                .collect(groupingBy(Comment::getItem, toList()));
+        Map<Item, List<Booking>> bookingMap = bookingRepository.findByItemInAndStatusIs(items, BookingStatus.APPROVED, Sort.by(DESC, "end"))
+                .stream()
+                .collect(groupingBy(Booking::getItem, toList()));
+        for (Item item : items) {
+            lastBooking = null;
+            nextBooking = null;
+            ItemDto itemDto = ItemMapper.toItemDto(item);
 
-        for (ItemDto itemDto : itemDtoList) {
-            itemDto.setComments(commentRepository.findAllByItemId(itemDto.getId())
-                    .stream().map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+            if (comments.get(item) != null) {
+                itemDto.setComments(comments.get(item).stream()
+                        .map(CommentMapper::toCommentDto).collect(Collectors.toList()));
+            }
 
-            List<Booking> lastBooking = bookingRepository.findTop1BookingByItemIdAndEndIsBeforeAndStatusIs(
-                    itemDto.getId(), LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.DESC, "end"));
+            if (bookingMap.get(item) != null) {
+                log.info("Now = " + now);
+                for (Booking booking : bookingMap.get(item)) {
+                    log.info("bookingId = " + booking.getId());
+                    log.info("bookingStart = " + booking.getStart());
+                    log.info("bookingEnd = " + booking.getEnd());
+                    if (lastBooking == null && booking.getEnd().isBefore(now)) {
+                        lastBooking = booking;
+                    } else if (booking.getEnd().isBefore(now) && booking.getEnd().isAfter(lastBooking.getEnd())) {
+                        lastBooking = booking;
+                    }
 
-            itemDto.setLastBooking(lastBooking.isEmpty() ? new BookingBriefDto() : BookingMapper.toBookingBriefDto(lastBooking.get(0)));
+                    if (nextBooking == null && booking.getStart().isAfter(now)) {
+                        nextBooking = booking;
+                    } else if (booking.getStart().isAfter(now) && booking.getStart().isBefore(nextBooking.getStart())) {
+                        nextBooking = booking;
+                    }
 
-            List<Booking> nextBooking = bookingRepository.findTop1BookingByItemIdAndEndIsAfterAndStatusIs(
-                    itemDto.getId(), LocalDateTime.now(), BookingStatus.APPROVED, Sort.by(Sort.Direction.ASC, "end"));
-
-            itemDto.setNextBooking(nextBooking.isEmpty() ? new BookingBriefDto() : BookingMapper.toBookingBriefDto(nextBooking.get(0)));
+                }
+                if (lastBooking == null && nextBooking != null) {
+                    lastBooking  = nextBooking;
+                    nextBooking = null;
+                }
+            }
+            itemDto.setLastBooking(lastBooking == null ? new BookingBriefDto() : BookingMapper.toBookingBriefDto(lastBooking));
+            itemDto.setNextBooking(nextBooking == null ? new BookingBriefDto() : BookingMapper.toBookingBriefDto(nextBooking));
+            itemDtoList.add(itemDto);
         }
 
         itemDtoList.sort(ITEM_DTO_SORT);
-
         for (ItemDto itemDto : itemDtoList) {
             if (itemDto.getLastBooking().getBookerId() == null) {
                 itemDto.setLastBooking(null);
@@ -138,7 +169,6 @@ public class ItemServiceImpl implements ItemService {
                 itemDto.setNextBooking(null);
             }
         }
-
         return itemDtoList;
     }
 
@@ -154,7 +184,7 @@ public class ItemServiceImpl implements ItemService {
           return itemRepository.findAll().stream()
                   .filter(x -> x.getAvailable().equals(true))
                   .filter(x -> x.getName().toLowerCase().contains(finalRequest) || x.getDescription().toLowerCase().contains(finalRequest))
-                  .collect(Collectors.toList());
+                  .collect(toList());
     }
 
     @Override
