@@ -1,4 +1,4 @@
-package ru.practicum.shareit.item;
+package ru.practicum.shareit.item.storage;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -74,7 +74,7 @@ public class ItemDaoInMemoryImpl implements ItemDao {
             String name = item.getName().toLowerCase();
             String description = item.getDescription().toLowerCase();
 
-            if (item.getAvailable().equals(true) && (name.contains(request) || description.contains(request))) {
+            if (item.getAvailable() && (name.contains(request) || description.contains(request))) {
                 result.add(item);
             }
         }
