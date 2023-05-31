@@ -13,17 +13,16 @@ import java.util.List;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
-    @Transactional
     @Override
     public User create(User user) {
         return userRepository.save(user);
     }
 
-    @Transactional
     @Override
     public User update(long userId, UserDto userDto) {
         User previousUser = userRepository.findById(userId)
@@ -40,18 +39,19 @@ public class UserServiceImpl implements UserService {
         return previousUser;
     }
 
+    @Transactional(readOnly = true)
     @Override
     public User findById(long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
     }
 
-    @Transactional
     @Override
     public void delete(long userId) {
         userRepository.deleteById(userId);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<User> getAll() {
         return userRepository.findAll();

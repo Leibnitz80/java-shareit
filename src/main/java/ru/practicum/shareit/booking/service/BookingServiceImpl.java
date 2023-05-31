@@ -16,6 +16,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
+import ru.practicum.shareit.utilities.PageRequestExt;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -81,7 +82,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllByOwner(Long userId, String strState, int from, int size) {
-        if (from < 0) throw new BadRequestException("Некоректное значение from");
         BookingState state;
         try {
             state = BookingState.valueOf(strState);
@@ -91,7 +91,7 @@ public class BookingServiceImpl implements BookingService {
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingsList = new ArrayList<>();
-        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        PageRequest pageRequest = PageRequestExt.of(from, size, SORT);
         switch (state) {
             case ALL:
                 bookingsList.addAll(bookingRepository.findAllByItemOwner(user, pageRequest).toList());
@@ -128,7 +128,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public List<BookingDto> getAllByUser(Long userId, String strState, int from, int size) {
-        if (from < 0) throw new BadRequestException("Некоректное значение from");
         BookingState state;
         try {
             state = BookingState.valueOf(strState);
@@ -138,7 +137,7 @@ public class BookingServiceImpl implements BookingService {
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingDtoList = new ArrayList<>();
-        PageRequest pageRequest = PageRequest.of(from / size, size, SORT);
+        PageRequest pageRequest = PageRequestExt.of(from, size, SORT);
         switch (state) {
             case ALL:
                 bookingDtoList.addAll(bookingRepository.findAllByBooker(user, pageRequest).toList());

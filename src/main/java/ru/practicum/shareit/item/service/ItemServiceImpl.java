@@ -2,7 +2,6 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +23,7 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.storage.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
+import ru.practicum.shareit.utilities.PageRequestExt;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -35,6 +35,7 @@ import static org.springframework.data.domain.Sort.Direction.DESC;
 
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ItemServiceImpl implements ItemService {
     private final ItemRepository itemRepository;
@@ -44,6 +45,7 @@ public class ItemServiceImpl implements ItemService {
     private final ItemRequestRepository itemRequestRepository;
     private static final Comparator<ItemDto> ITEM_DTO_SORT = Comparator.comparing(o -> o.getLastBooking().getStart(), Comparator.nullsLast(Comparator.reverseOrder()));
 
+    @Transactional
     public ItemDto create(ItemDto itemDto, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
@@ -83,7 +85,6 @@ public class ItemServiceImpl implements ItemService {
         return ItemMapper.toItemDto(item);
     }
 
-    @Transactional(readOnly = true)
     @Override
     public ItemDto findById(Long itemId, Long userId) {
         Item item = itemRepository.findById(itemId)
@@ -113,10 +114,9 @@ public class ItemServiceImpl implements ItemService {
         return itemDto;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<ItemDto> getAllByUserId(Long userId, int from, int size) {
-        Set<Item> items = new HashSet<>(itemRepository.findAllByOwnerId(userId, PageRequest.of(from, size)).toSet());
+        Set<Item> items = new HashSet<>(itemRepository.findAllByOwnerId(userId, PageRequestExt.of(from, size)).toSet());
         if (items.isEmpty()) {
             return new ArrayList<>();
         }
@@ -168,15 +168,15 @@ public class ItemServiceImpl implements ItemService {
             return new ArrayList<>();
         }
 
-//        List<Item> result = new ArrayList<>();
         final String finalRequest = request.toLowerCase();
 
-          return itemRepository.findAll(PageRequest.of(from, size)).stream()
+          return itemRepository.findAll(PageRequestExt.of(from, size)).stream()
                   .filter(x -> x.getAvailable().equals(true))
                   .filter(x -> x.getName().toLowerCase().contains(finalRequest) || x.getDescription().toLowerCase().contains(finalRequest))
                   .collect(toList());
     }
 
+    @Transactional
     @Override
     public CommentDto createComment(Long itemId, Long userId, CommentDto commentDto) {
         User user = userRepository.findById(userId)

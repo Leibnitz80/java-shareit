@@ -2,7 +2,6 @@ package ru.practicum.shareit.request.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.exceptions.ObjectNotFoundException;
@@ -13,6 +12,7 @@ import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.request.storage.ItemRequestRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
+import ru.practicum.shareit.utilities.PageRequestExt;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class ItemRequestServiceImpl implements ItemRequestService {
     private final ItemRequestRepository itemRequestRepository;
@@ -28,8 +29,8 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
     private final ItemRepository itemRepository;
 
-    @Transactional
     @Override
+    @Transactional
     public ItemRequestDto create(Long userId, ItemRequestDto itemRequestDto) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
@@ -41,7 +42,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return ItemRequestMapper.toItemRequestDto(itemRequest);
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<ItemRequestDto> getAllByUser(Long userId) {
         User user = userRepository.findById(userId)
@@ -55,13 +55,12 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return itemRequestDtos;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<ItemRequestDto> getAll(int from, int size, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException("user with id:" + userId + " not found error"));
         List<ItemRequestDto> itemRequestDtos = itemRequestRepository.findAllByRequestorNotLikeOrderByCreatedAsc(user,
-                        PageRequest.of(from, size))
+                        PageRequestExt.of(from, size))
                 .stream()
                 .map(ItemRequestMapper::toItemRequestDto)
                 .collect(Collectors.toList());
@@ -70,7 +69,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         return itemRequestDtos;
     }
 
-    @Transactional(readOnly = true)
     @Override
     public ItemRequestDto getById(Long requestId, Long userId) {
         User user = userRepository.findById(userId)
