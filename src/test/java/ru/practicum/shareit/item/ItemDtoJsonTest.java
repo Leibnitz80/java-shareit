@@ -14,18 +14,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 public class ItemDtoJsonTest {
     @Autowired
-    JacksonTester<ItemDto> json;
+    private JacksonTester<ItemDto> json;
 
     @Test
     @SneakyThrows
     @DisplayName("Тест на проверки перевода в формат JSON для класса ItemDto")
     void itemDtoJsonTest() {
-        ItemDto itemDto = new ItemDto();
+        final ItemDto itemDto = new ItemDto();
         itemDto.setId(1L);
         itemDto.setDescription("description");
         itemDto.setAvailable(true);
 
-        JsonContent<ItemDto> result = json.write(itemDto);
+        final JsonContent<ItemDto> result = json.write(itemDto);
 
         assertThat(result).extractingJsonPathNumberValue("$.id").isEqualTo(1);
         assertThat(result).extractingJsonPathStringValue("$.description").isEqualTo("description");

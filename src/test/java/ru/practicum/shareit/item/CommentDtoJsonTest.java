@@ -16,19 +16,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 @JsonTest
 public class CommentDtoJsonTest {
     @Autowired
-    JacksonTester<CommentDto> json;
+    private JacksonTester<CommentDto> json;
 
     @Test
     @SneakyThrows
     @DisplayName("Тест на проверки перевода в формат JSON для класса CommentDto")
     void commentDtoJsonTest() {
-        CommentDto commentDto = new CommentDto();
+        final CommentDto commentDto = new CommentDto();
         commentDto.setId(1L);
         commentDto.setText("text");
         commentDto.setAuthorName("name");
         commentDto.setCreated(LocalDateTime.parse("2023-10-01T19:34:50.63"));
 
-        JsonContent<CommentDto> result = json.write(commentDto);
+        final JsonContent<CommentDto> result = json.write(commentDto);
 
         assertThat(result).extractingJsonPathNumberValue("$.id").isEqualTo(1);
         assertThat(result).extractingJsonPathStringValue("$.text").isEqualTo("text");
