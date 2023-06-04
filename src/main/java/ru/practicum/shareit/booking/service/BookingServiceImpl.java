@@ -1,6 +1,7 @@
 package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemRepository;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.storage.UserRepository;
+import ru.practicum.shareit.utilities.PageRequestExt;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -79,7 +81,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllByOwner(Long userId, String strState) {
+    public List<BookingDto> getAllByOwner(Long userId, String strState, int from, int size) {
         BookingState state;
         try {
             state = BookingState.valueOf(strState);
@@ -89,31 +91,32 @@ public class BookingServiceImpl implements BookingService {
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingsList = new ArrayList<>();
+        PageRequest pageRequest = PageRequestExt.of(from, size, SORT);
         switch (state) {
             case ALL:
-                bookingsList.addAll(bookingRepository.findAllByItemOwner(user, SORT));
+                bookingsList.addAll(bookingRepository.findAllByItemOwner(user, pageRequest).toList());
                 break;
 
             case FUTURE:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartAfter(user, LocalDateTime.now(), SORT));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartAfter(user, LocalDateTime.now(), pageRequest).toList());
                 break;
 
             case CURRENT:
                 bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStartBeforeAndEndAfter(user,
-                        LocalDateTime.now(), LocalDateTime.now(), SORT));
+                        LocalDateTime.now(), LocalDateTime.now(), pageRequest).toList());
                 break;
 
             case PAST:
                 bookingsList.addAll(bookingRepository.findAllByItemOwnerAndEndBefore(user,
-                        LocalDateTime.now(), SORT));
+                        LocalDateTime.now(), pageRequest).toList());
                 break;
 
             case WAITING:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.WAITING, SORT));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.WAITING, pageRequest).toList());
                 break;
 
             case REJECTED:
-                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.REJECTED, SORT));
+                bookingsList.addAll(bookingRepository.findAllByItemOwnerAndStatusEquals(user, BookingStatus.REJECTED, pageRequest).toList());
                 break;
 
             default:
@@ -124,7 +127,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<BookingDto> getAllByUser(Long userId, String strState) {
+    public List<BookingDto> getAllByUser(Long userId, String strState, int from, int size) {
         BookingState state;
         try {
             state = BookingState.valueOf(strState);
@@ -134,31 +137,32 @@ public class BookingServiceImpl implements BookingService {
         checkUserExists(userId);
         User user = userRepository.findById(userId).orElseThrow();
         List<Booking> bookingDtoList = new ArrayList<>();
+        PageRequest pageRequest = PageRequestExt.of(from, size, SORT);
         switch (state) {
             case ALL:
-                bookingDtoList.addAll(bookingRepository.findAllByBooker(user, SORT));
+                bookingDtoList.addAll(bookingRepository.findAllByBooker(user, pageRequest).toList());
                 break;
 
             case REJECTED:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.REJECTED, SORT));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.REJECTED, pageRequest).toList());
                 break;
 
             case CURRENT:
                 bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartBeforeAndEndAfter(user,
-                        LocalDateTime.now(), LocalDateTime.now(), SORT));
+                        LocalDateTime.now(), LocalDateTime.now(), pageRequest).toList());
                 break;
 
             case PAST:
                 bookingDtoList.addAll(bookingRepository.findAllByBookerAndEndBefore(user,
-                        LocalDateTime.now(), SORT));
+                        LocalDateTime.now(), pageRequest).toList());
                 break;
 
             case WAITING:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.WAITING, SORT));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStatusEquals(user, BookingStatus.WAITING, pageRequest).toList());
                 break;
 
             case FUTURE:
-                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartAfter(user, LocalDateTime.now(), SORT));
+                bookingDtoList.addAll(bookingRepository.findAllByBookerAndStartAfter(user, LocalDateTime.now(), pageRequest).toList());
                 break;
 
             default:

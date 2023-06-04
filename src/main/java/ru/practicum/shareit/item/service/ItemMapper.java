@@ -1,7 +1,6 @@
 package ru.practicum.shareit.item.service;
 
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
+import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.model.User;
@@ -9,7 +8,7 @@ import ru.practicum.shareit.user.model.User;
 import java.util.ArrayList;
 import java.util.List;
 
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@UtilityClass
 public class ItemMapper {
     public static ItemDto toItemDto(Item item) {
         ItemDto result = new ItemDto();
@@ -17,11 +16,18 @@ public class ItemMapper {
         result.setName(item.getName());
         result.setDescription(item.getDescription());
         result.setAvailable(item.getAvailable());
+        result.setRequestId(item.getRequest() != null ? item.getRequest().getId() : null);
         return result;
     }
 
     public static Item toItemModel(ItemDto itemDto, User owner) {
-        return new Item(itemDto.getId(), itemDto.getName(), itemDto.getDescription(), itemDto.getAvailable(), owner);
+        Item result = new Item();
+        result.setId(itemDto.getId());
+        result.setName(itemDto.getName());
+        result.setDescription(itemDto.getDescription());
+        result.setAvailable(itemDto.getAvailable());
+        result.setOwner(owner);
+        return result;
     }
 
     public static List<ItemDto> toItemDtoList(List<Item> items) {
