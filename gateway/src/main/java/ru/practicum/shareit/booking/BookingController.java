@@ -38,7 +38,7 @@ public class BookingController {
 
     @GetMapping
     public ResponseEntity<Object> getAllByUser(@RequestHeader(userHeaderId) Long userId,
-                                               @RequestParam(defaultValue = "ALL") BookingState state,
+                                               @RequestParam(defaultValue = "ALL") String state,
                                                @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                @RequestParam(defaultValue = "10") @Positive int size) {
         return bookingClient.getAllByUser(state, userId, from, size);
@@ -46,7 +46,7 @@ public class BookingController {
 
     @GetMapping("/owner")
     public ResponseEntity<Object> getAllByOwner(@RequestHeader(userHeaderId) Long userId,
-                                                @RequestParam(defaultValue = "ALL") BookingState state,
+                                                @RequestParam(defaultValue = "ALL") String state,
                                                 @RequestParam(defaultValue = "0") @PositiveOrZero int from,
                                                 @RequestParam(defaultValue = "10") @Positive int size) {
         return bookingClient.getAllByOwner(state, userId, from, size);
