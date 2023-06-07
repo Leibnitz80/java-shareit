@@ -116,7 +116,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public List<ItemDto> getAllByUserId(Long userId, int from, int size) {
-        Set<Item> items = new HashSet<>(itemRepository.findAllByOwnerIdOrderByIdAsc(userId, PageRequestExt.of(from, size)).toSet());
+        Set<Item> items = new HashSet<>(itemRepository.findAllByOwnerIdOrderById(userId, PageRequestExt.of(from, size)).toSet());
         if (items.isEmpty()) {
             return new ArrayList<>();
         }
