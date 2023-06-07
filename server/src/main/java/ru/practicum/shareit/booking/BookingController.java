@@ -1,62 +1,50 @@
 package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingBriefDto;
 import ru.practicum.shareit.booking.service.BookingService;
 
-import javax.validation.Valid;
-import javax.validation.constraints.Positive;
-import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
 
-@Slf4j
-@Validated
 @RestController
 @RequestMapping(path = "/bookings")
 @RequiredArgsConstructor
 public class BookingController {
     private final BookingService bookingService;
-    private final String userHeaderId = "X-Sharer-User-Id";
+    private static final String USER_HEADER_ID = "X-Sharer-User-Id";
 
     @PostMapping
-    public BookingDto create(@Valid @RequestBody BookingBriefDto bookingBriefDto,
-                             @RequestHeader(userHeaderId) Long userId) {
-        log.info("BookingController: POST create, userId = {}" , userId);
+    public BookingDto create(@RequestBody BookingBriefDto bookingBriefDto,
+                             @RequestHeader(USER_HEADER_ID) Long userId) {
         return bookingService.create(bookingBriefDto, userId);
     }
 
     @PatchMapping("/{bookingId}")
-    public BookingDto approve(@PathVariable Long bookingId, @RequestHeader(userHeaderId) Long userId,
+    public BookingDto approve(@PathVariable Long bookingId, @RequestHeader(USER_HEADER_ID) Long userId,
                               @RequestParam Boolean approved) {
-        log.info("BookingController: PATCH approve, userId = {}; bookingId = {}" ,userId, bookingId);
         return bookingService.approve(bookingId, userId, approved);
     }
 
     @GetMapping("/owner")
-    public List<BookingDto> getAllByOwner(@RequestHeader(userHeaderId) Long userId,
+    public List<BookingDto> getAllByOwner(@RequestHeader(USER_HEADER_ID) Long userId,
                                           @RequestParam(defaultValue = "ALL") String state,
-                                          @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-                                          @RequestParam(defaultValue = "10") @Positive int size) {
-        log.info("BookingController: GET getAllByOwner, userId = {}; state = {}",userId, state);
+                                          @RequestParam(defaultValue = "0") int from,
+                                          @RequestParam(defaultValue = "10") int size) {
         return bookingService.getAllByOwner(userId, state, from, size);
     }
 
     @GetMapping
-    public List<BookingDto> getAllByUser(@RequestHeader(userHeaderId) Long userId,
+    public List<BookingDto> getAllByUser(@RequestHeader(USER_HEADER_ID) Long userId,
                                          @RequestParam(defaultValue = "ALL") String state,
-                                         @RequestParam(defaultValue = "0") @PositiveOrZero int from,
-                                         @RequestParam(defaultValue = "10") @Positive int size) {
-        log.info("BookingController: GET getAllByUser, userId = {}; state = {}",userId, state);
+                                         @RequestParam(defaultValue = "0") int from,
+                                         @RequestParam(defaultValue = "10") int size) {
         return bookingService.getAllByUser(userId, state, from, size);
     }
 
     @GetMapping("/{bookingId}")
-    public BookingDto getById(@PathVariable Long bookingId, @RequestHeader(userHeaderId) Long userId) {
-        log.info("BookingController: GET getById, userId = {}; bookingId = {}",userId, bookingId);
+    public BookingDto getById(@PathVariable Long bookingId, @RequestHeader(USER_HEADER_ID) Long userId) {
         return bookingService.getById(bookingId, userId);
     }
 }
