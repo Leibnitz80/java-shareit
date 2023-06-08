@@ -10,5 +10,5 @@ import java.util.Set;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
     List<Comment> findAllByItemId(Long itemId);
-    Set<Comment> findByItemIn(Set<Item> items, Sort sort);
+    Set<Comment> findByItemIn(List<Item> items, Sort sort);
 }
