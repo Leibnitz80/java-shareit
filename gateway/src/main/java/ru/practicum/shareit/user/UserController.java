@@ -3,13 +3,14 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
-@RestController
+@Controller
 @Slf4j
 @Validated
 @RequestMapping(path = "/users")
@@ -42,6 +43,7 @@ public class UserController {
         return userClient.update(userId, userDto);
     }
 
+    @ResponseBody
     @DeleteMapping("/{userId}")
     public void delete(@NotNull @PathVariable Long userId) {
         log.info("UserController: DELETE delete, userId = {}", userId);

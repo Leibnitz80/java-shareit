@@ -88,6 +88,21 @@ public class ItemRequestServiceTest {
     }
 
     @Test
+    @DisplayName("Тест на получение всех реквестов")
+    void getAllTest() {
+        when(userRepository.findById(any(Long.class)))
+                .thenReturn(Optional.ofNullable(user));
+
+        when(itemRequestRepository.findAllByRequestorIsNot(any(User.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(new ArrayList<>()));
+
+        List<ItemRequestDto> result = itemRequestService.getAll(0, 10, 1L);
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     @DisplayName("Тест на получение реквеста по ИД")
     void getByIdTest() {
         when(userRepository.findById(any(Long.class)))
